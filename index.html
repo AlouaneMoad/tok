@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Token Extractor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <h2>Token Extractor</h2>
+  <p>Tap "Copy Token" below, then paste it into your Kali script.</p>
+  <button id="copyBtn" style="padding:10px; font-size:16px; margin:20px">COPY TOKEN</button>
+  <pre id="tokenDisplay" style="background:#f0f0f0; padding:10px; word-break:break-all"></pre>
+
+  <script>
+    // Extract ALL auth tokens from storage
+    function extractTokens() {
+      const tokens = {};
+      
+      // 1. localStorage tokens
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.toLowerCase().includes('token') || key.toLowerCase().includes('auth')) {
+          tokens.localStorage = { [key]: localStorage.getItem(key) };
+        }
+      }
+      
+      // 2. Vuex store tokens (from your JS snippet)
+      if (window.__VUE_DEVTOOLS_GLOBAL_HOOK__?.Vue?.__pinia?.state) {
+        const piniaState = window.__VUE_DEVTOOLS_GLOBAL_HOOK__.Vue.__pinia.state.value;
+        if (piniaState.user?.token) {
+          tokens.piniaToken = piniaState.user.token;
+        }
+      }
+      
+      // 3. Session cookies (acw_tc)
+      document.cookie.split(';').forEach(cookie => {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'acw_tc') {
+          tokens.acw_tc = value;
+        }
+      });
+      
+      return tokens;
+    }
+
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      const tokens = extractTokens();
+      const text = JSON.stringify(tokens, null, 2);
+      
+      // Display on page
+      document.getElementById('tokenDisplay').textContent = text;
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(text)
+        .then(() => alert('✅ Token copied! Paste into Kali script.'))
+        .catch(err => console.error('Copy failed:', err));
+    });
+  </script>
+</body>
+</html>
